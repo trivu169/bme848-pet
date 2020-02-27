@@ -4,7 +4,6 @@
 - Step 1: in the terminal, type 
 
 	matlab -nodesktop -r "bme848_pet_ui"
-	
 if this doesn't work, try:
 
 	matlab -nodisplay -nodesktop -r "run bme848_pet_ui.m"
