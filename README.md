@@ -16,9 +16,9 @@ or:
 After a few minutes (~1 min), if successfully, the UI of the program will pop up.
 - **Step 2**: browse for PET and CT data by pressing "..." buttons respectively. Then press Load
 - **Step 3**: at this step, we should be able to see a preview on the Preview field to the right.
-	+ \# of Angles are the number of projection between 0 - 360 degrees. 
+	+ Specify the \# of Angles (\# of projections) between 0 - 360 degrees. 
 	+ Choose your range of slices to be saved in the Slices options. Upon clicking Apply, the white lines will appear in the Preview, indicating the region of chosen slices. 
-	+ Angle is the current angle of projection of the Preview. 
+	+ Angle is the current angle of projection of the Preview. This angle is only for preview and will not affect the output data.
 	+ Depth weighting use an exponential depth correction similar to Beer's law. Toggle it to turn on depth weighting. 
 	+ Update the changes in the Preview by clicking Apply.
 After finishing all the modification, click Apply to apply the changes before saving data.
