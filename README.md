@@ -16,5 +16,5 @@ After a few minutes (~1 min), if successfully, the UI of the program will pop up
 	+ Depth weighting use an exponential depth correction similar to Beer's law. Toggle it to turn on depth weighting. 
 	+ Update the changes in the Preview by clicking Apply.
 After finishing all the modification, click Apply to apply the changes before saving data.
-- Step 4: when ready, click Save Data to save the MIP data in real format. The output data will be in the same folder of the code, named "<petfilename>_proj.fl". 
+- Step 4: when ready, click Save Data to save the MIP data in real format. The output data will be in the same folder of the code, named "*petfilename*_proj.fl". 
 The Message box will let you know if the data is saved successfully, with the size of the output data.
