@@ -22,7 +22,7 @@ function varargout = bme848_pet_ui(varargin)
 
 % Edit the above text to modify the response to help bme848_pet_ui
 
-% Last Modified by GUIDE v2.5 26-Feb-2020 17:44:43
+% Last Modified by GUIDE v2.5 27-Feb-2020 13:45:46
 
 % Begin initialization code - DO NOT EDIT
 gui_Singleton = 1;
@@ -149,10 +149,10 @@ set(handles.status_stext, 'String',...
     'Loading data...');
 clc;
 
-[data_raw_pet, num_slice_pet, img_size_pet, data_path_pet] = loadData(handles.fname_pet_ui,...
-    handles.path_pet_ui, handles.suffix_pet_ui, handles.imgsize_pet_ui);
-[data_raw_ct, num_slice_ct, img_size_ct, data_path_ct] = loadData(handles.fname_ct_ui,...
-    handles.path_ct_ui, handles.suffix_ct_ui, handles.imgsize_ct_ui);
+[data_raw_pet, num_slice_pet, img_size_pet, data_path_pet] = loadData(...
+    handles.path_pet_ui, handles.imgsize_pet_ui, '.fl');
+[data_raw_ct, num_slice_ct, img_size_ct, data_path_ct] = loadData(...
+    handles.path_pet_ui, handles.imgsize_ct_ui, '.sh');
 
 % Reset handles
 set(handles.sliceLow_ui, 'String', num2str(1));
@@ -169,8 +169,10 @@ for i = 1:size(img_data_ct_pre,3)
         [img_size_pet, img_size_pet], 'Antialiasing', true);
 end
 
+curr_angle = str2double(get(handles.angle_ui, 'String')); % Get its suffix
 handles.data_path_pet = data_path_pet;
 handles.img_data_pet = img_data_pet;
+handles.curr_angle = curr_angle;
 guidata(hObject,handles);
 
 % angle = get(handles.angle_ui, 'String'); % Get file name
@@ -180,7 +182,7 @@ guidata(hObject,handles);
 % pre_proj = weightDepth(data_rotated);
 % data_proj = projection(pre_proj);
 % imagesc(data_proj);
-updateFig(handles, hObject);
+updateFig(handles, hObject, handles.curr_angle);
 set(handles.status_stext, 'String',...
     'Done!');
 
@@ -188,13 +190,10 @@ set(handles.status_stext, 'String',...
 assignin('base', 'pet', img_data_pet);
 assignin('base', 'ct', img_data_ct);
 
-function [data_raw, num_slice, img_size, data_path] = loadData(...
-    fname_ui, path_ui,suffix_ui, imgsize_ui)
-fname = get(fname_ui, 'String'); % Get file name
+function [data_raw, num_slice, img_size, data_path] = loadData(path_ui,...
+    imgsize_ui, suffix)
 path_to_file = get(path_ui, 'String'); % Get its directory
-suffix = cellstr(get(suffix_ui, 'String')); % Get its suffix
-suffix = suffix{get(suffix_ui, 'Value')};
-data_path = [path_to_file, fname, suffix];
+data_path = path_to_file;
 img_size = str2double(get(imgsize_ui,...
     'String')); % Input image size
 % Load data
@@ -208,7 +207,7 @@ num_slice = size(data_raw,1)/(img_size^2);
 fclose(file_id);
 
 function a=rotate3d(a, angle)
-a = imrotate3(a,angle,[0,0,1]);
+a = imrotate3(a,angle,[0,0,1], 'crop');
 
 function a=projection(a)
 a = squeeze(max(a,[],2));
@@ -238,16 +237,14 @@ end
 function a_weighted=weightDepth(a, handles)
 % At 511 keV from the annihilation in PET, the mass attenuation coefficient
 % is the same for all organs: mu/p = 0.1 g/cm^2 = 1 m^2/kg
-wchoice = cellstr(get(handles.wchoice_ui, 'String')); % Get its suffix
-wchoice = wchoice{get(handles.wchoice_ui, 'Value')};
-switch wchoice
-    case 'None'
-        w = ones(size(a,2));
-    case 'Linear'
-        w = linspace(0,1,size(a,2));
-    case 'Exponential'
-        w = linspace(0,1,size(a,2));
-        w = exp(-w);
+wchoice = get(handles.wchoice_ui, 'Value');
+if wchoice
+    w = linspace(0,1,size(a,2));
+    w = w*1;
+    mu = 1; % attenuation coeff for 511 keV photon of soft tissue
+    w = exp(-w*mu);
+else
+    w = ones(size(a,2));
 end
 a_weighted = bsxfun(@times, a, w);
 % for i = 1:size(pet,3)
@@ -270,18 +267,18 @@ function wdepth_ui_Callback(hObject, eventdata, handles)
 
 
 
-function sliceLow_ui_Callback(hObject, eventdata, handles)
-% hObject    handle to sliceLow_ui (see GCBO)
+function numAngles_ui_Callback(hObject, eventdata, handles)
+% hObject    handle to numAngles_ui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-% Hints: get(hObject,'String') returns contents of sliceLow_ui as text
-%        str2double(get(hObject,'String')) returns contents of sliceLow_ui as a double
+% Hints: get(hObject,'String') returns contents of numAngles_ui as text
+%        str2double(get(hObject,'String')) returns contents of numAngles_ui as a double
 
 
 % --- Executes during object creation, after setting all properties.
-function sliceLow_ui_CreateFcn(hObject, eventdata, handles)
-% hObject    handle to sliceLow_ui (see GCBO)
+function numAngles_ui_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to numAngles_ui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    empty - handles not created until after all CreateFcns called
 
@@ -320,9 +317,27 @@ function saveData_ui_Callback(hObject, eventdata, handles)
 % hObject    handle to saveData_ui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-projID = fopen([get(handles.fname_pet_ui, 'String'), '_proj.fl'],'w+');
-fwrite(projID,handles.img_data_pet,'float32');
+numAngles = get(handles.numAngles_ui, 'String');
+numAngles = str2double(numAngles);
+angles = linspace(0,360,numAngles);
+count = 1;
+for i=angles
+    msg = ['Saving angle: ', num2str(i), ' degree'];
+    set(handles.status_stext, 'String', msg);
+    disp(msg);
+    temp = updateFig(handles, hObject, i);
+    to_save(:,:,count) = temp';
+    count = count+1;
+end
+size(to_save)
+msg = ['Saving successfully!', ' Output size: ', num2str(size(to_save,1)),...
+    'x', num2str(size(to_save,2)), 'x',...
+    num2str(size(to_save,3))];
+[filepath,name,ext] = fileparts(get(handles.path_pet_ui, 'String'));
+projID = fopen([name, '_proj.fl'],'w+');
+fwrite(projID,to_save,'float32');
 fclose(projID);
+set(handles.status_stext, 'String', msg);
 
 % --- If Enable == 'on', executes on mouse press in 5 pixel border.
 % --- Otherwise, executes on mouse press in 5 pixel border or over wdepth_ui.
@@ -331,10 +346,8 @@ function wdepth_ui_ButtonDownFcn(hObject, eventdata, handles)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
 
-function pre_proj = updateFig(handles, hObject)
+function post_proj = updateFig(handles, hObject, angle)
 clc
-angle = get(handles.angle_ui, 'String'); % Get file name
-angle = str2double(angle);
 img_data_pet = handles.img_data_pet;
 % data_norm = normalize(img_data);
 set(handles.status_stext, 'String',...
@@ -351,7 +364,9 @@ sliceHigh = str2double(sliceHigh);
 data_proj(sliceLow,:) = max(max(max(img_data_pet)));
 data_proj(sliceHigh, :) = max(max(max(img_data_pet)));
 imagesc(data_proj);
+colormap('gray');
 cl = caxis;
+cl = cl*0.03;
 if str2double(get(handles.cmax_ui, 'String')) == 0
     set(handles.cmin_ui, 'String', num2str(cl(1)));
     set(handles.cmax_ui, 'String', num2str(cl(2)));
@@ -362,9 +377,8 @@ cur_cmax = str2double(get(handles.cmax_ui, 'String'));
 if cl ~= [cur_cmin, cur_cmax]
     caxis([cur_cmin, cur_cmax]);
 end
+post_proj = data_proj(sliceLow:sliceHigh, :);
 % This is the current image data shown in the figure before projection
-handles.pre_proj = pre_proj;
-guidata(hObject,handles);
 set(handles.status_stext, 'String',...
     'Done!');
 
@@ -439,7 +453,7 @@ function apply_ui_Callback(hObject, eventdata, handles)
 % hObject    handle to apply_ui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-updateFig(handles, hObject);
+updateFig(handles, hObject, str2double(get(handles.angle_ui, 'String')));
 
 
 % --- Executes on key press with focus on figure1 or any of its controls.
@@ -451,17 +465,16 @@ function figure1_WindowKeyPressFcn(hObject, eventdata, handles)
 %	Modifier: name(s) of the modifier key(s) (i.e., control, shift) pressed
 % handles    structure with handles and user data (see GUIDATA)
 if strcmp(get(gcf,'currentkey'), 'return')
-    updateFig(handles, hObject);
+    updateFig(handles, hObject, str2double(get(handles.angle_ui, 'String')));
 end
 
 
-% --- Executes on button press in getdir_ui.
-function getdir_ui_Callback(hObject, eventdata, handles)
-% hObject    handle to getdir_ui (see GCBO)
+% --- Executes on button press in getpet_ui.
+function getpet_ui_Callback(hObject, eventdata, handles)
+% hObject    handle to getpet_ui (see GCBO)
 % eventdata  reserved - to be defined in a future version of MATLAB
 % handles    structure with handles and user data (see GUIDATA)
-img_path = uigetdir;
-img_path = [img_path, '\'];
+img_path = uigetfile('*.*');
 set(handles.path_pet_ui, 'String', img_path);
 
 
@@ -585,3 +598,65 @@ function wchoice_ui_CreateFcn(hObject, eventdata, handles)
 if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
     set(hObject,'BackgroundColor','white');
 end
+
+
+
+function sliceLow_ui_Callback(hObject, eventdata, handles)
+% hObject    handle to sliceLow_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of sliceLow_ui as text
+%        str2double(get(hObject,'String')) returns contents of sliceLow_ui as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function sliceLow_ui_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to sliceLow_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+
+function edit14_Callback(hObject, eventdata, handles)
+% hObject    handle to path_ct_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+
+% Hints: get(hObject,'String') returns contents of path_ct_ui as text
+%        str2double(get(hObject,'String')) returns contents of path_ct_ui as a double
+
+
+% --- Executes during object creation, after setting all properties.
+function edit14_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to path_ct_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
+
+% Hint: edit controls usually have a white background on Windows.
+%       See ISPC and COMPUTER.
+if ispc && isequal(get(hObject,'BackgroundColor'), get(0,'defaultUicontrolBackgroundColor'))
+    set(hObject,'BackgroundColor','white');
+end
+
+
+% --- Executes on button press in getct_ui.
+function getct_ui_Callback(hObject, eventdata, handles)
+% hObject    handle to getct_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    structure with handles and user data (see GUIDATA)
+img_path = uigetfile('*.*');
+set(handles.path_ct_ui, 'String', img_path);
+
+
+% --- Executes during object creation, after setting all properties.
+function getpet_ui_CreateFcn(hObject, eventdata, handles)
+% hObject    handle to getpet_ui (see GCBO)
+% eventdata  reserved - to be defined in a future version of MATLAB
+% handles    empty - handles not created until after all CreateFcns called
