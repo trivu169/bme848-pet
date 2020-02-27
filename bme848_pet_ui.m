@@ -152,7 +152,7 @@ clc;
 [data_raw_pet, num_slice_pet, img_size_pet, data_path_pet] = loadData(...
     handles.path_pet_ui, handles.imgsize_pet_ui, '.fl');
 [data_raw_ct, num_slice_ct, img_size_ct, data_path_ct] = loadData(...
-    handles.path_pet_ui, handles.imgsize_ct_ui, '.sh');
+    handles.path_ct_ui, handles.imgsize_ct_ui, '.sh');
 
 % Reset handles
 set(handles.sliceLow_ui, 'String', num2str(1));
@@ -203,7 +203,7 @@ if strcmp(suffix, '.fl')
 else
     data_raw = fread(file_id, inf, 'int16');
 end
-num_slice = size(data_raw,1)/(img_size^2);
+num_slice = size(data_raw,1)/(img_size^2)
 fclose(file_id);
 
 function a=rotate3d(a, angle)
