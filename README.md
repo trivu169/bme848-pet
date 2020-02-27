@@ -4,12 +4,15 @@
 - Step 1: in the terminal, type:
 
 	matlab -nodesktop -r "bme848_pet_ui"
+	
 if this doesn't work, try:
 
 	matlab -nodisplay -nodesktop -r "run bme848_pet_ui.m"
+	
 or:
 
 	matlab -nodesktop -r "bme848_pet_ui.m"
+	
 After a few minutes (~1 min), if successfully, the UI of the program will pop up.
 - Step 2: browse for PET and CT data by pressing "..." buttons respectively. Then press Load
 - Step 3: at this step, we should be able to see a preview on the Preview field to the right.
