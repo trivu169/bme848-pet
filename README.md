@@ -1,4 +1,6 @@
-INSTRUCTION:
+# Tri Vu - BME 848 - PET Lab
+
+## INSTRUCTION:
 - Step 1: in the terminal, type 
 	matlab -nodesktop -r "bme848_pet_ui"
 if this doesn't work, try:
@@ -8,7 +10,7 @@ or:
 After a few minutes (~1 min), if successfully, the UI of the program will pop up.
 - Step 2: browse for PET and CT data by pressing "..." buttons respectively. Then press Load
 - Step 3: at this step, we should be able to see a preview on the Preview field to the right.
-	+ # of Angles are the number of projection between 0 - 360 degrees. 
+	+ \# of Angles are the number of projection between 0 - 360 degrees. 
 	+ Choose your range of slices to be saved in the Slices options. Upon clicking Apply, the white lines will appear in the Preview, indicating the region of chosen slices. 
 	+ Angle is the current angle of projection of the Preview. 
 	+ Depth weighting use an exponential depth correction similar to Beer's law. Toggle it to turn on depth weighting. 
